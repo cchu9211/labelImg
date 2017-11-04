@@ -5,8 +5,6 @@ import os.path
 import re
 import sys
 import subprocess
-from PIL import Image
-import piexif
 
 from functools import partial
 from collections import defaultdict
@@ -127,7 +125,7 @@ class MainWindow(QMainWindow, WindowMixin):
         listLayout.setContentsMargins(0, 0, 0, 0)
 
         # Create a widget for using default label
-        self.useDefaultLabelCheckbox = QCheckBox(u'使用默认标签')
+        self.useDefaultLabelCheckbox = QCheckBox(u'Use default label')
         self.useDefaultLabelCheckbox.setChecked(False)
         self.defaultLabelTextLine = QLineEdit()
         useDefaultLabelQHBoxLayout = QHBoxLayout()
@@ -159,8 +157,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.labelList.itemChanged.connect(self.labelItemChanged)
         listLayout.addWidget(self.labelList)
 
-        self.dock = QDockWidget(u'标签列表', self)
-        self.dock.setObjectName(u'标签')
+        self.dock = QDockWidget(u'Box Labels', self)
+        self.dock.setObjectName(u'Labels')
         self.dock.setWidget(labelListContainer)
 
         # Tzutalin 20160906 : Add file list and dock to move faster
@@ -171,8 +169,8 @@ class MainWindow(QMainWindow, WindowMixin):
         filelistLayout.addWidget(self.fileListWidget)
         fileListContainer = QWidget()
         fileListContainer.setLayout(filelistLayout)
-        self.filedock = QDockWidget(u'文件列表', self)
-        self.filedock.setObjectName(u'文件')
+        self.filedock = QDockWidget(u'File List', self)
+        self.filedock.setObjectName(u'Files')
         self.filedock.setWidget(fileListContainer)
 
         self.zoomWidget = ZoomWidget()
@@ -206,69 +204,69 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Actions
         action = partial(newAction, self)
-        quit = action(u'&退出', self.close,
-                      'Ctrl+Q', 'quit', u'退出应用')
+        quit = action('&Quit', self.close,
+                      'Ctrl+Q', 'quit', u'Quit application')
 
-        open = action(u'&打开', self.openFile,
-                      'Ctrl+O', 'open', u'打开图片或标签文件')
+        open = action('&Open', self.openFile,
+                      'Ctrl+O', 'open', u'Open image or label file')
 
-        opendir = action(u'&打开文件夹', self.openDirDialog,
-                         'Ctrl+u', 'open', u'打开图片文件夹')
+        opendir = action('&Open Dir', self.openDirDialog,
+                         'Ctrl+u', 'open', u'Open Dir')
 
-        changeSavedir = action(u'&更改保存地址', self.changeSavedirDialog,
-                               'Ctrl+r', 'open', u'修改默认 Annotation 保存地址')
+        changeSavedir = action('&Change Save Dir', self.changeSavedirDialog,
+                               'Ctrl+r', 'open', u'Change default saved Annotation dir')
 
-        openAnnotation = action(u'&打开 Annotation', self.openAnnotationDialog,
-                                'Ctrl+Shift+O', 'open', u'打开 Annotation')
+        openAnnotation = action('&Open Annotation', self.openAnnotationDialog,
+                                'Ctrl+Shift+O', 'open', u'Open Annotation')
 
-        openNextImg = action(u'&后一张', self.openNextImg,
-                             'd', 'next', u'打开下一张')
+        openNextImg = action('&Next Image', self.openNextImg,
+                             'd', 'next', u'Open Next')
 
-        openPrevImg = action(u'&前一张', self.openPrevImg,
-                             'a', 'prev', u'打开上一张')
+        openPrevImg = action('&Prev Image', self.openPrevImg,
+                             'a', 'prev', u'Open Prev')
 
-        verify = action(u'&校验图片', self.verifyImg,
-                        'space', 'verify', u'校验图片')
+        verify = action('&Verify Image', self.verifyImg,
+                        'space', 'verify', u'Verify Image')
 
-        save = action(u'&保存', self.saveFile,
-                      'Ctrl+S', 'save', u'保存标签到文件', enabled=False)
+        save = action('&Save', self.saveFile,
+                      'Ctrl+S', 'save', u'Save labels to file', enabled=False)
 
-        saveAs = action(u'&另存为...', self.saveFileAs,
-                        'Ctrl+Shift+S', 'save-as', u'另存标签到', enabled=False)
+        saveAs = action('&Save As', self.saveFileAs,
+                        'Ctrl+Shift+S', 'save-as', u'Save labels to a different file', enabled=False)
 
-        close = action(u'&关闭', self.closeFile, 'Ctrl+W', 'close', u'关闭')
+        close = action('&Close', self.closeFile, 'Ctrl+W', 'close', u'Close current file')
         
-        resetAll = action(u'&重置所有', self.resetAll, None, 'resetall', u'重置所有')
+        resetAll = action('&ResetAll', self.resetAll, None, 'resetall', u'Reset all')
 
         color1 = action('Box Line Color', self.chooseColor1,
-                        'Ctrl+L', 'color_line', u'选择框线颜色')
+                        'Ctrl+L', 'color_line', u'Choose Box line color')
 
-        createMode = action('新建\nRectBox', self.setCreateMode,
-                            'w', 'new', u'开始画RectBox', enabled=False)
-        editMode = action(u'&编辑\nRectBox', self.setEditMode,
-                          'Ctrl+J', 'edit', u'开始编辑RectBox', enabled=False)
+        createMode = action('Create\nRectBox', self.setCreateMode,
+                            'w', 'new', u'Start drawing Boxs', enabled=False)
+        editMode = action('&Edit\nRectBox', self.setEditMode,
+                          'Ctrl+J', 'edit', u'Move and edit Boxs', enabled=False)
 
-        create = action(u'新建\nRectBox', self.createShape,
-                        'w', 'new', u'开始画RectBox', enabled=False)
-        delete = action(u'删除\nRectBox', self.deleteSelectedShape,
-                        'Delete', 'delete', u'删除', enabled=False)
-        copy = action(u'&复制\nRectBox', self.copySelectedShape,
+        create = action('Create\nRectBox', self.createShape,
+                        'w', 'new', u'Draw a new Box', enabled=False)
+        delete = action('Delete\nRectBox', self.deleteSelectedShape,
+                        'Delete', 'delete', u'Delete', enabled=False)
+        copy = action('&Duplicate\nRectBox', self.copySelectedShape,
                       'Ctrl+D', 'copy', u'Create a duplicate of the selected Box',
                       enabled=False)
 
-        advancedMode = action(u'&高级模式', self.toggleAdvancedMode,
+        advancedMode = action('&Advanced Mode', self.toggleAdvancedMode,
                               'Ctrl+Shift+A', 'expert', u'Switch to advanced mode',
                               checkable=True)
 
-        hideAll = action(u'&隐藏\nRectBox', partial(self.togglePolygons, False),
+        hideAll = action('&Hide\nRectBox', partial(self.togglePolygons, False),
                          'Ctrl+H', 'hide', u'Hide all Boxs',
                          enabled=False)
-        showAll = action(u'&显示\nRectBox', partial(self.togglePolygons, True),
+        showAll = action('&Show\nRectBox', partial(self.togglePolygons, True),
                          'Ctrl+A', 'hide', u'Show all Boxs',
                          enabled=False)
 
-        help = action(u'&指引', self.showTutorialDialog, None, 'help', u'Show demos')
-        showInfo = action(u'&信息', self.showInfoDialog, None, 'help', u'Information')
+        help = action('&Tutorial', self.showTutorialDialog, None, 'help', u'Show demos')
+        showInfo = action('&Information', self.showInfoDialog, None, 'help', u'Information')
 
         zoom = QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
@@ -278,16 +276,16 @@ class MainWindow(QMainWindow, WindowMixin):
                                              fmtShortcut("Ctrl+Wheel")))
         self.zoomWidget.setEnabled(False)
 
-        zoomIn = action(u'放大', partial(self.addZoom, 10),
+        zoomIn = action('Zoom &In', partial(self.addZoom, 10),
                         'Ctrl++', 'zoom-in', u'Increase zoom level', enabled=False)
-        zoomOut = action(u'&缩小', partial(self.addZoom, -10),
+        zoomOut = action('&Zoom Out', partial(self.addZoom, -10),
                          'Ctrl+-', 'zoom-out', u'Decrease zoom level', enabled=False)
-        zoomOrg = action(u'&原始大小', partial(self.setZoom, 100),
+        zoomOrg = action('&Original size', partial(self.setZoom, 100),
                          'Ctrl+=', 'zoom', u'Zoom to original size', enabled=False)
-        fitWindow = action(u'&适应窗口', self.setFitWindow,
+        fitWindow = action('&Fit Window', self.setFitWindow,
                            'Ctrl+F', 'fit-window', u'Zoom follows window size',
                            checkable=True, enabled=False)
-        fitWidth = action(u'适应宽度', self.setFitWidth,
+        fitWidth = action('Fit &Width', self.setFitWidth,
                           'Ctrl+Shift+F', 'fit-width', u'Zoom follows window width',
                           checkable=True, enabled=False)
         # Group zoom controls into a list for easier toggling.
@@ -301,7 +299,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.MANUAL_ZOOM: lambda: 1,
         }
 
-        edit = action(u'&编辑标签', self.editLabel,
+        edit = action('&Edit Label', self.editLabel,
                       'Ctrl+E', 'edit', u'Modify the label of the selected Box',
                       enabled=False)
         self.editButton.setDefaultAction(edit)
@@ -345,19 +343,19 @@ class MainWindow(QMainWindow, WindowMixin):
                               onShapesPresent=(saveAs, hideAll, showAll))
 
         self.menus = struct(
-            file=self.menu(u'&文件'),
-            edit=self.menu(u'&编辑'),
-            view=self.menu(u'&视图'),
-            help=self.menu(u'&帮助'),
-            recentFiles=QMenu(u'打开最近...'),
+            file=self.menu('&File'),
+            edit=self.menu('&Edit'),
+            view=self.menu('&View'),
+            help=self.menu('&Help'),
+            recentFiles=QMenu('Open &Recent'),
             labelList=labelMenu)
 
         # Auto saving : Enable auto saving if pressing next
-        self.autoSaving = QAction(u'自动保存', self)
+        self.autoSaving = QAction("Auto Saving", self)
         self.autoSaving.setCheckable(True)
         self.autoSaving.setChecked(settings.get(SETTING_AUTO_SAVE, False))
         # Sync single class mode from PR#106
-        self.singleClassMode = QAction(u"Single Class Mode", self)
+        self.singleClassMode = QAction("Single Class Mode", self)
         self.singleClassMode.setShortcut("Ctrl+Shift+S")
         self.singleClassMode.setCheckable(True)
         self.singleClassMode.setChecked(settings.get(SETTING_SINGLE_CLASS, False))
@@ -379,10 +377,10 @@ class MainWindow(QMainWindow, WindowMixin):
         # Custom context menu for the canvas widget:
         addActions(self.canvas.menus[0], self.actions.beginnerContext)
         addActions(self.canvas.menus[1], (
-            action(u'&Copy here', self.copyShape),
-            action(u'&Move here', self.moveShape)))
+            action('&Copy here', self.copyShape),
+            action('&Move here', self.moveShape)))
 
-        self.tools = self.toolbar(u'工具')
+        self.tools = self.toolbar('Tools')
         self.actions.beginner = (
             open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, None, create, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
@@ -595,7 +593,7 @@ class MainWindow(QMainWindow, WindowMixin):
         for i, f in enumerate(files):
             icon = newIcon('labels')
             action = QAction(
-                icon, u'&%d %s' % (i + 1, QFileInfo(f).fileName()), self)
+                icon, '&%d %s' % (i + 1, QFileInfo(f).fileName()), self)
             action.triggered.connect(partial(self.loadRecent, f))
             menu.addAction(action)
 
@@ -879,12 +877,6 @@ class MainWindow(QMainWindow, WindowMixin):
         for item, shape in self.itemsToShapes.items():
             item.setCheckState(Qt.Checked if value else Qt.Unchecked)
 
-    def getFilePathAndName(self, filePath):
-         try:
-            return os.path.splitext(filePath)[0]
-         except:
-             return filePath[:filePath.lastIndexOf('.')]
-
     def loadFile(self, filePath=None):
         """Load the specified file, or the last opened file if None."""
         self.resetState()
@@ -919,14 +911,11 @@ class MainWindow(QMainWindow, WindowMixin):
                 # read data first and store for saving into label file.
                 self.imageData = read(unicodeFilePath, None)
                 self.labelFile = None
-
-            print('self.imageData read end')
+                            
             image = QImage.fromData(self.imageData)
-            print(image)
-            print('------------path %s' %unicodeFilePath)
             if image.isNull():
-                self.errorMessage(u'打开出错',
-                                  u"<p>确认 <i>%s</i> 是有效的图片" % unicodeFilePath)
+                self.errorMessage(u'Error opening file',
+                                  u"<p>Make sure <i>%s</i> is a valid image file." % unicodeFilePath)
                 self.status("Error reading %s" % unicodeFilePath)
                 return False
             self.status("Loaded %s" % os.path.basename(unicodeFilePath))
@@ -950,8 +939,7 @@ class MainWindow(QMainWindow, WindowMixin):
                     xmlPath = os.path.join(self.defaultSaveDir, basename)
                     self.loadPascalXMLByFilename(xmlPath)
                 else:
-                    # xmlPath = os.path.splitext(filePath)[0] + XML_EXT
-                    xmlPath = self.getFilePathAndName(filePath) + XML_EXT
+                    xmlPath = os.path.splitext(filePath)[0] + XML_EXT
                     if os.path.isfile(xmlPath):
                         self.loadPascalXMLByFilename(xmlPath)
 
@@ -965,7 +953,6 @@ class MainWindow(QMainWindow, WindowMixin):
             self.canvas.setFocus(True)
             return True
         return False
-
 
     def resizeEvent(self, event):
         if self.canvas and not self.image.isNull()\
@@ -1249,8 +1236,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def discardChangesDialog(self):
         yes, no = QMessageBox.Yes, QMessageBox.No
-        msg = u'有未保存的改变, 是否继续?'
-        return yes == QMessageBox.warning(self, u'注意', msg, yes | no)
+        msg = u'You have unsaved changes, proceed anyway?'
+        return yes == QMessageBox.warning(self, u'Attention', msg, yes | no)
 
     def errorMessage(self, title, message):
         return QMessageBox.critical(self, title,
@@ -1260,7 +1247,7 @@ class MainWindow(QMainWindow, WindowMixin):
         return os.path.dirname(self.filePath) if self.filePath else '.'
 
     def chooseColor1(self):
-        color = self.colorDialog.getColor(self.lineColor, u'选择线颜色',
+        color = self.colorDialog.getColor(self.lineColor, u'Choose line color',
                                           default=DEFAULT_LINE_COLOR)
         if color:
             self.lineColor = color
@@ -1277,7 +1264,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 action.setEnabled(False)
 
     def chshapeLineColor(self):
-        color = self.colorDialog.getColor(self.lineColor, u'选择线颜色',
+        color = self.colorDialog.getColor(self.lineColor, u'Choose line color',
                                           default=DEFAULT_LINE_COLOR)
         if color:
             self.canvas.selectedShape.line_color = color
@@ -1285,7 +1272,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.setDirty()
 
     def chshapeFillColor(self):
-        color = self.colorDialog.getColor(self.fillColor, u'选择填充颜色',
+        color = self.colorDialog.getColor(self.fillColor, u'Choose fill color',
                                           default=DEFAULT_FILL_COLOR)
         if color:
             self.canvas.selectedShape.fill_color = color
@@ -1321,32 +1308,7 @@ class MainWindow(QMainWindow, WindowMixin):
         shapes = tVocParseReader.getShapes()
         self.loadLabels(shapes)
         self.canvas.verified = tVocParseReader.verified
-def rotate_jpeg(filename):
-    img = Image.open(filename)
-    if "exif" in img.info:
-        exif_dict = piexif.load(img.info["exif"])
 
-        if piexif.ImageIFD.Orientation in exif_dict["0th"]:
-            print('rotate image-------------')
-            orientation = exif_dict["0th"].pop(piexif.ImageIFD.Orientation)
-            exif_bytes = piexif.dump(exif_dict)
-            print('orientation is %d--------'%orientation)
-            if orientation == 2:
-                img = img.transpose(Image.FLIP_LEFT_RIGHT)
-            elif orientation == 3:
-                img = img.rotate(180)
-            elif orientation == 4:
-                img = img.rotate(180).transpose(Image.FLIP_LEFT_RIGHT)
-            elif orientation == 5:
-                img = img.rotate(-90).transpose(Image.FLIP_LEFT_RIGHT)
-            elif orientation == 6:
-                img = img.rotate(-90)
-            elif orientation == 7:
-                img = img.rotate(90).transpose(Image.FLIP_LEFT_RIGHT)
-            elif orientation == 8:
-                img = img.rotate(90)
-
-            img.save(filename, exif=exif_bytes)
 
 def inverted(color):
     return QColor(*[255 - v for v in color.getRgb()])
@@ -1354,11 +1316,7 @@ def inverted(color):
 
 def read(filename, default=None):
     try:
-        print('---------start rotate jpeg')
-        # rotate_jpeg(filename)
-        print('---------end rotate jpeg')
         with open(filename, 'rb') as f:
-            #.decode('gbk')
             return f.read()
     except:
         return default
