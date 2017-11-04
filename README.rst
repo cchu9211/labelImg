@@ -1,3 +1,18 @@
+基于v1.5.2更新
+======
+
++ 解决ios系统拍照图片旋转问题
++ 部分汉化
+
+windows编译环境
+------
++ python=2.7
++ pyqt=4.11.4
++ lxml pyinstaller
++ 编译脚本 pyintaller -F -w --clean labelImg.py
+    
+
+
 LabelImg
 ========
 
